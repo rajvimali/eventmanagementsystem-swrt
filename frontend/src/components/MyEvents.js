@@ -6,6 +6,7 @@ const MyEvents = () => {
   const [events, setEvents] = useState([]);
   const navigate = useNavigate();
 
+  // Fetch the events created by the logged-in user
   useEffect(() => {
     const fetchMyEvents = async () => {
       try {
@@ -16,15 +17,13 @@ const MyEvents = () => {
         });
         setEvents(res.data);
       } catch (error) {
-        console.error(
-          "Failed to fetch events:",
-          error.response ? error.response.data : error.message
-        );
+        console.error("Failed to fetch events:", error.response.data);
       }
     };
     fetchMyEvents();
   }, []);
 
+  // Handle event deletion
   const handleDelete = async (eventId) => {
     try {
       await axios.delete(`/api/events/${eventId}/delete`, {
@@ -32,74 +31,59 @@ const MyEvents = () => {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      setEvents(events.filter((event) => event._id !== eventId)); // Remove deleted event from UI
+      setEvents(events.filter((event) => event._id !== eventId));
     } catch (error) {
-      console.error(
-        "Error deleting event:",
-        error.response ? error.response.data : error.message
-      );
+      console.error("Failed to delete event:", error.response.data);
     }
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <h2 className="text-4xl font-bold text-center mb-10 text-indigo-600">
+    <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
+      <h2 className="text-3xl font-bold text-center text-indigo-600 mb-8">
         My Events
       </h2>
 
       {/* Navigation Links */}
-      <div className="mb-8 text-center">
-        <ul className="inline-flex space-x-6">
-          <li>
-            <a href="/" className="text-blue-500 hover:underline">
-              Home
-            </a>
-          </li>
-          <li>
-            <a href="/logout" className="text-blue-500 hover:underline">
-              Logout
-            </a>
-          </li>
-          <li>
-            <a href="/create" className="text-blue-500 hover:underline">
-              Create Event
-            </a>
-          </li>
-        </ul>
+      <div className="mb-8 flex justify-center space-x-6 text-indigo-600">
+        <a href="/" className="hover:underline">
+          Home
+        </a>
+        <a href="/create" className="hover:underline">
+          Create Event
+        </a>
+        <a href="/logout" className="hover:underline">
+          Logout
+        </a>
       </div>
 
       {/* Events Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {events.length ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {events.length > 0 ? (
           events.map((event) => (
             <div
               key={event._id}
-              className="bg-white border p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300"
+              className="bg-white shadow-md rounded-lg p-6 flex flex-col justify-between"
             >
-              <h3 className="text-2xl font-semibold text-indigo-600 mb-2">
-                {event.title}
-              </h3>
-              <p className="text-gray-700 mb-2">{event.description}</p>
-              <p className="text-gray-600">
-                Date: {new Date(event.date).toLocaleDateString()}
-              </p>
-              <p className="text-gray-600">Location: {event.location}</p>
-              <p className="text-gray-600">
-                Max Attendees: {event.maxAttendees}
-              </p>
-              <p className="text-gray-600">
-                Attendees: {event.attendees.length}
-              </p>
+              <div>
+                <h3 className="text-xl font-semibold text-indigo-700 mb-2">
+                  {event.title}
+                </h3>
+                <p className="text-gray-600 mb-2">{event.description}</p>
+                <p className="text-gray-500 mb-1">
+                  Date: {new Date(event.date).toLocaleDateString()}
+                </p>
+                <p className="text-gray-500 mb-2">Location: {event.location}</p>
+              </div>
               <div className="flex justify-between mt-4">
                 <button
                   onClick={() => navigate(`/edit-event/${event._id}`)}
-                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                  className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(event._id)}
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300"
                 >
                   Delete
                 </button>
@@ -107,8 +91,8 @@ const MyEvents = () => {
             </div>
           ))
         ) : (
-          <p className="text-center text-gray-600">
-            No events found. Create a new event.
+          <p className="text-center text-gray-600 col-span-3">
+            No events found. Create your first event!
           </p>
         )}
       </div>
