@@ -27,6 +27,7 @@ const EventSchema = new mongoose.Schema({
       ref: "User",
     },
   ],
+  imageUrl: { type: String }, // Field to store image URL
   creator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

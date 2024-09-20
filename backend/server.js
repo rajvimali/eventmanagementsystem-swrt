@@ -16,6 +16,10 @@ const eventRoutes = require("./routes/eventRoutes");
 // Use routes
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
+require("./scheduler");
+
+// Serving static files for uploaded images
+app.use("/uploads", express.static("uploads"));
 
 // Connect to MongoDB
 mongoose
@@ -26,7 +30,7 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((error) => console.log(error));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
