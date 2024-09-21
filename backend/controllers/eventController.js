@@ -1,10 +1,8 @@
-// backend/controllers/eventControllers
-const Event = require("../models/Event");
+const Event = require('../models/Event');
 
 // Create Event
 exports.createEvent = async (req, res) => {
-  const { title, description, date, location, maxAttendees, eventType } =
-    req.body;
+  const { title, description, date, location, maxAttendees, eventType } = req.body;
 
   try {
     // Check if the file was uploaded
@@ -26,10 +24,10 @@ exports.createEvent = async (req, res) => {
     await event.save();
 
     // Respond with the created event
-    res.status(200).json({ message: "Event created successfully", event });
+    res.status(200).json({ message: 'Event created successfully', event });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
@@ -44,17 +42,17 @@ exports.getAllEvents = async (req, res) => {
       query.date = { $gte: new Date(date) }; // Get events on or after the specified date
     }
     if (location) {
-      query.location = { $regex: location, $options: "i" }; // Case-insensitive search for location
+      query.location = { $regex: location, $options: 'i' }; // Case-insensitive search for location
     }
     if (eventType) {
-      query.eventType = { $regex: eventType, $options: "i" }; // Case-insensitive search for event type
+      query.eventType = { $regex: eventType, $options: 'i' }; // Case-insensitive search for event type
     }
 
     const events = await Event.find(query);
     res.status(200).json(events);
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
@@ -64,13 +62,13 @@ exports.getEventById = async (req, res) => {
     const event = await Event.findById(req.params.id);
 
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({ message: 'Event not found' });
     }
 
     res.status(200).json(event);
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
@@ -82,25 +80,24 @@ exports.getEventsByUser = async (req, res) => {
     res.status(200).json(events);
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
 // Update Event
 exports.updateEvent = async (req, res) => {
-  const { title, description, date, location, maxAttendees, eventType } =
-    req.body;
+  const { title, description, date, location, maxAttendees, eventType } = req.body;
 
   try {
     const event = await Event.findById(req.params.id);
 
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({ message: 'Event not found' });
     }
 
     // Only the creator can update the event
     if (event.creator.toString() !== req.user.id) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     // Update the event fields
@@ -119,10 +116,10 @@ exports.updateEvent = async (req, res) => {
     // Save the updated event
     await event.save();
 
-    res.status(200).json({ message: "Event updated successfully", event });
+    res.status(200).json({ message: 'Event updated successfully', event });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
@@ -132,21 +129,21 @@ exports.deleteEvent = async (req, res) => {
     const event = await Event.findById(req.params.id);
 
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({ message: 'Event not found' });
     }
 
     // Only the creator can delete the event
     if (event.creator.toString() !== req.user.id) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     // Delete the event
     await Event.findByIdAndDelete(req.params.id);
 
-    res.status(200).json({ message: "Event deleted successfully" });
+    res.status(200).json({ message: 'Event deleted successfully' });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
@@ -156,28 +153,26 @@ exports.rsvpToEvent = async (req, res) => {
     const event = await Event.findById(req.params.id);
 
     if (!event) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({ message: 'Event not found' });
     }
 
     // Check if the user is already an attendee
     if (event.attendees.includes(req.user.id)) {
-      return res
-        .status(400)
-        .json({ message: "You have already RSVP’d for this event" });
+      return res.status(400).json({ message: 'You have already RSVP’d for this event' });
     }
 
     // Check if max attendees limit is reached
     if (event.attendees.length >= event.maxAttendees) {
-      return res.status(400).json({ message: "Max attendees limit reached" });
+      return res.status(400).json({ message: 'Max attendees limit reached' });
     }
 
     // Add the user to the attendees list
     event.attendees.push(req.user.id);
     await event.save();
 
-    res.status(200).json({ message: "RSVP successful", event });
+    res.status(200).json({ message: 'RSVP successful', event });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
