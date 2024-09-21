@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import API from '../api';
-import { useNavigate } from 'react-router-dom';
+// ../src/component/CreateEvent
+import React, { useState } from "react";
+import API from "../api";
+import { useNavigate } from "react-router-dom";
 
 const CreateEvent = () => {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    date: '',
-    location: '',
+    title: "",
+    description: "",
+    date: "",
+    location: "",
     maxAttendees: 0,
   });
 
@@ -30,40 +31,42 @@ const CreateEvent = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const eventData = new FormData(); // Create a FormData object to handle file and text data
-    eventData.append('title', formData.title);
-    eventData.append('description', formData.description);
-    eventData.append('date', formData.date);
-    eventData.append('location', formData.location);
-    eventData.append('maxAttendees', formData.maxAttendees);
+    eventData.append("title", formData.title);
+    eventData.append("description", formData.description);
+    eventData.append("date", formData.date);
+    eventData.append("location", formData.location);
+    eventData.append("maxAttendees", formData.maxAttendees);
     if (selectedFile) {
-      eventData.append('eventImage', selectedFile); // Append the selected file to the FormData
+      eventData.append("eventImage", selectedFile); // Append the selected file to the FormData
     }
 
     try {
-      const token = localStorage.getItem('token'); // Get token from localStorage
+      const token = localStorage.getItem("token"); // Get token from localStorage
 
-      const res = await API.post('/events', eventData, {
+      const res = await API.post("/events", eventData, {
         headers: {
-          'Content-Type': 'multipart/form-data', // Important for sending files
+          "Content-Type": "multipart/form-data", // Important for sending files
           Authorization: `Bearer ${token}`, // Include token in headers
         },
       });
 
       if (res.status === 200) {
-        navigate('/'); // Redirect to home after successful event creation
+        navigate("/"); // Redirect to home after successful event creation
       } else {
-        console.error('Failed to create event');
+        console.error("Failed to create event");
       }
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error("Error creating event:", error);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-3xl font-bold text-center text-gray-800">Create New Event</h2>
+      <h2 className="text-3xl font-bold text-center text-gray-800">
+        Create New Event
+      </h2>
 
       <div>
         <input
