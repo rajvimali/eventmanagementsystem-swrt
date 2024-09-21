@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
-import API from '../api';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import API from "../api";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -16,15 +20,15 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await API.post('/auth/register', formData);
+      const response = await API.post("/auth/register", formData);
       if (response.status === 200) {
-        localStorage.setItem('name', response.data.name); // Store the user's name
-        navigate('/login');
+        localStorage.setItem("name", response.data.name); // Store the user's name
+        navigate("/login");
       } else {
-        console.error('Failed to register user');
+        console.error("Failed to register user");
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
     }
   };
 
@@ -34,7 +38,9 @@ const Register = () => {
         onSubmit={handleSubmit}
         className="bg-white shadow-md rounded-lg p-8 max-w-md w-full space-y-6"
       >
-        <h2 className="text-3xl font-bold text-center text-gray-800">Register</h2>
+        <h2 className="text-3xl font-bold text-center text-gray-800">
+          Register
+        </h2>
 
         <div>
           <input
@@ -77,12 +83,12 @@ const Register = () => {
             type="submit"
             className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors"
           >
-            Register
+            <a href="/login">Register</a>
           </button>
         </div>
 
         <p className="text-center text-gray-500">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <a href="/login" className="text-blue-600 hover:underline">
             Login
           </a>

@@ -1,4 +1,3 @@
-// ../src/component/CreateEvent
 import React, { useState } from "react";
 import API from "../api";
 import { useNavigate } from "react-router-dom";
@@ -64,9 +63,7 @@ const CreateEvent = () => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-3xl font-bold text-center text-gray-800">
-        Create New Event
-      </h2>
+      {/* <h2 className="text-3xl font-bold text-center text-gray-800">Create New Event</h2> */}
 
       <div>
         <input
