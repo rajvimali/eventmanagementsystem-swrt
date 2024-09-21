@@ -1,239 +1,178 @@
-const Event = require("../models/Event");
-const multer = require("multer");
-const path = require("path");
-const admin = require("../firebaseAdmin");
+const Event = require('../models/Event');
 
-// Update Event and Notify Users
-exports.updateEvent = async (req, res) => {
-  try {
-    const event = await Event.events.findOne({
-      _id: req.params.id,
-      creator: req.user._id,
-    });
-    if (!event) return res.status(404).send({ error: "Event not found" });
-
-    Object.assign(event, req.body);
-    await event.save();
-
-    // Notify all users who have RSVP'd to the event
-    const registrationTokens = event.attendees.map((user) => user.fcmToken);
-    if (registrationTokens.length > 0) {
-      const message = {
-        notification: {
-          title: "Event Updated",
-          body: `The event "${event.title}" has been updated.`,
-        },
-        tokens: registrationTokens,
-      };
-      await admin.messaging().sendMulticast(message);
-    }
-
-    res.status(200).send(event);
-  } catch (error) {
-    res.status(400).send({ error: "Failed to update event" });
-  }
-};
-
-// Notify when Event is Approaching
-exports.notifyUpcomingEvents = async () => {
-  const events = await Event.find({
-    date: {
-      $gte: new Date(),
-      $lte: new Date(new Date().setDate(new Date().getDate() + 1)),
-    },
-  });
-
-  events.forEach(async (event) => {
-    const registrationTokens = event.attendees.map((user) => user.fcmToken);
-    if (registrationTokens.length > 0) {
-      const message = {
-        notification: {
-          title: "Event Reminder",
-          body: `The event "${event.title}" is happening soon!`,
-        },
-        tokens: registrationTokens,
-      };
-      await admin.messaging().sendMulticast(message);
-    }
-  });
-};
-
-// RSVP to an Event
-exports.rsvpEvent = async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.id);
-
-    // Check if the event is full
-    if (event.attendees.length >= event.maxAttendees) {
-      return res.status(400).send({ error: "Event is full" });
-    }
-
-    // Check if the user has already RSVP'd
-    if (event.attendees.includes(req.user._id)) {
-      return res
-        .status(400)
-        .send({ error: "You have already RSVP'd for this event" });
-    }
-
-    // Add user to attendees list
-    event.attendees.push(req.user._id);
-    await event.save();
-
-    res.status(200).send({ message: "RSVP successful", event });
-  } catch (error) {
-    res.status(400).send({ error: "Failed to RSVP" });
-  }
-};
-
-// Get RSVP Status for a User
-exports.getRsvpStatus = async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.id);
-    const isAttending = event.attendees.includes(req.user._id);
-    res.status(200).send({ attending: isAttending });
-  } catch (error) {
-    res.status(400).send({ error: "Failed to get RSVP status" });
-  }
-};
-
-// Multer Configuration
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/"); // Directory to store images
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // Rename the image
-  },
-});
-
-// File Filter to check file types
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error("Invalid file type. Only JPEG, PNG, and JPG are allowed."));
-  }
-};
-
-const upload = multer({ storage: storage, fileFilter: fileFilter });
-
+// Create Event
 exports.createEvent = async (req, res) => {
+  const { title, description, date, location, maxAttendees, eventType } = req.body;
+
   try {
-    const { title, description, date, location, maxAttendees } = req.body;
+    // Check if the file was uploaded
+    const imagePath = req.file ? req.file.path : null; // Save the file path if the file is uploaded
+
+    // Create a new event object
     const event = new Event({
       title,
       description,
       date,
       location,
       maxAttendees,
-      imageUrl: req.file ? req.file.path : null, // Store image path
-      creator: req.user._id,
+      eventType,
+      creator: req.user.id, // Use the logged-in user ID as the event creator
+      image: imagePath, // Store the image path in the database
     });
 
+    // Save the event to the database
     await event.save();
-    res.json(event);
+
+    // Respond with the created event
+    res.status(200).json({ message: 'Event created successfully', event });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
+// Get All Events with Filtering
 exports.getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find();
-    res.json(events);
+    const { date, location, eventType } = req.query;
+    let query = {};
+
+    // Add filters to the query if they are provided
+    if (date) {
+      query.date = { $gte: new Date(date) }; // Get events on or after the specified date
+    }
+    if (location) {
+      query.location = { $regex: location, $options: 'i' }; // Case-insensitive search for location
+    }
+    if (eventType) {
+      query.eventType = { $regex: eventType, $options: 'i' }; // Case-insensitive search for event type
+    }
+
+    const events = await Event.find(query);
+    res.status(200).json(events);
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
+// Get a Specific Event by ID
 exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: "Event not found" });
-    res.json(event);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    res.status(200).json(event);
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    res.status(500).send('Server Error');
   }
 };
 
+// Get Events Created by Logged-in User
+exports.getEventsByUser = async (req, res) => {
+  try {
+    // Fetch events created by the logged-in user
+    const events = await Event.find({ creator: req.user.id });
+    res.status(200).json(events);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// Update Event
 exports.updateEvent = async (req, res) => {
-  const { title, description, date, location, maxAttendees } = req.body;
+  const { title, description, date, location, maxAttendees, eventType } = req.body;
 
   try {
     const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: "Event not found" });
 
-    if (event.creator.toString() !== req.user.id) {
-      return res.status(401).json({ message: "Unauthorized" });
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
     }
 
+    // Only the creator can update the event
+    if (event.creator.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Update the event fields
     event.title = title;
     event.description = description;
     event.date = date;
     event.location = location;
     event.maxAttendees = maxAttendees;
+    event.eventType = eventType;
 
+    // Check if there's a new image file uploaded
+    if (req.file) {
+      event.image = req.file.path;
+    }
+
+    // Save the updated event
     await event.save();
-    res.json(event);
+
+    res.status(200).json({ message: 'Event updated successfully', event });
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
-  }
-};
-
-// Get Events Created by the User
-exports.getUserEvents = async (req, res) => {
-  try {
-    const events = await Event.find({ creator: req.user._id });
-    if (!events.length) {
-      return res
-        .status(404)
-        .json({ message: "No events found for this user." });
-    }
-    res.status(200).json(events);
-  } catch (error) {
-    res.status(500).json({ error: "Error fetching events." });
-  }
-};
-
-// Edit Event
-exports.editEvent = async (req, res) => {
-  try {
-    const event = await Event.findOne({
-      _id: req.params.id,
-      creator: req.user._id,
-    });
-    if (!event)
-      return res
-        .status(404)
-        .send({ error: "Event not found or you are not authorized" });
-
-    Object.assign(event, req.body); // Update event fields
-    await event.save();
-    res.status(200).send(event);
-  } catch (error) {
-    res.status(400).send({ error: "Error editing event" });
+    res.status(500).send('Server Error');
   }
 };
 
 // Delete Event
 exports.deleteEvent = async (req, res) => {
   try {
-    const event = await Event.findOneAndDelete({
-      _id: req.params.id,
-      creator: req.user._id,
-    });
-    if (!event)
-      return res
-        .status(404)
-        .send({ error: "Event not found or you are not authorized" });
+    const event = await Event.findById(req.params.id);
 
-    res.status(200).send({ message: "Event deleted successfully" });
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Only the creator can delete the event
+    if (event.creator.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Delete the event
+    await Event.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ message: 'Event deleted successfully' });
   } catch (error) {
-    res.status(400).send({ error: "Error deleting event" });
+    console.error(error.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// RSVP to an Event
+exports.rsvpToEvent = async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
+
+    // Check if the user is already an attendee
+    if (event.attendees.includes(req.user.id)) {
+      return res.status(400).json({ message: 'You have already RSVP’d for this event' });
+    }
+
+    // Check if max attendees limit is reached
+    if (event.attendees.length >= event.maxAttendees) {
+      return res.status(400).json({ message: 'Max attendees limit reached' });
+    }
+
+    // Add the user to the attendees list
+    event.attendees.push(req.user.id);
+    await event.save();
+
+    res.status(200).json({ message: 'RSVP successful', event });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server Error');
   }
 };

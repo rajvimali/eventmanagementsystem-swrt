@@ -1,137 +1,147 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import API from '../api';
+import { useNavigate } from 'react-router-dom';
 
 const CreateEvent = () => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
-  const [location, setLocation] = useState("");
-  const [maxAttendees, setMaxAttendees] = useState("");
-  const [image, setImage] = useState(null);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    date: '',
+    location: '',
+    maxAttendees: 0,
+  });
+
+  const [selectedFile, setSelectedFile] = useState(null); // State for the selected file (event image)
   const navigate = useNavigate();
 
+  // Handle form data change
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // Handle file selection
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0]); // Get the selected file
+  };
+
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("date", date);
-    formData.append("location", location);
-    formData.append("maxAttendees", maxAttendees);
-    formData.append("image", image);
+    
+    const eventData = new FormData(); // Create a FormData object to handle file and text data
+    eventData.append('title', formData.title);
+    eventData.append('description', formData.description);
+    eventData.append('date', formData.date);
+    eventData.append('location', formData.location);
+    eventData.append('maxAttendees', formData.maxAttendees);
+    if (selectedFile) {
+      eventData.append('eventImage', selectedFile); // Append the selected file to the FormData
+    }
 
     try {
-      const res = await axios.post("/api/events/create", formData, {
+      const token = localStorage.getItem('token'); // Get token from localStorage
+
+      const res = await API.post('/events', eventData, {
         headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          'Content-Type': 'multipart/form-data', // Important for sending files
+          Authorization: `Bearer ${token}`, // Include token in headers
         },
       });
-      console.log("Event created successfully:", res.data);
-      navigate("/my-events"); // Redirect to My Events page
+
+      if (res.status === 200) {
+        navigate('/'); // Redirect to home after successful event creation
+      } else {
+        console.error('Failed to create event');
+      }
     } catch (error) {
-      console.error("Error creating event:", error.response.data);
+      console.error('Error creating event:', error);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      <h2 className="text-3xl font-bold text-center mb-6 text-indigo-600">
-        Create New Event
-      </h2>
-      <div className="mb-8 flex justify-center space-x-6 text-indigo-600">
-        <a href="/" className="hover:underline">
-          Home
-        </a>
-        <a href="/my-events" className="hover:underline">
-          My Events
-        </a>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <h2 className="text-3xl font-bold text-center text-gray-800">Create New Event</h2>
+
+      <div>
+        <input
+          type="text"
+          name="title"
+          placeholder="Event Title"
+          value={formData.title}
+          onChange={handleChange}
+          required
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300 outline-none"
+        />
       </div>
-      <form
-        onSubmit={handleSubmit}
-        encType="multipart/form-data"
-        className="space-y-6"
-      >
-        <div>
-          <label className="block text-gray-700 font-medium mb-2">
-            Event Title
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter event title"
-            required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-medium mb-2">
-            Description
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter event description"
-            required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          ></textarea>
-        </div>
-        <div>
-          <label className="block text-gray-700 font-medium mb-2">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-medium mb-2">
-            Location
-          </label>
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Enter event location"
-            required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-medium mb-2">
-            Max Attendees
-          </label>
-          <input
-            type="number"
-            value={maxAttendees}
-            onChange={(e) => setMaxAttendees(e.target.value)}
-            placeholder="Enter maximum number of attendees"
-            required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-700 font-medium mb-2">
-            Event Image
-          </label>
-          <input
-            type="file"
-            onChange={(e) => setImage(e.target.files[0])}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
+
+      <div>
+        <input
+          type="text"
+          name="description"
+          placeholder="Event Description"
+          value={formData.description}
+          onChange={handleChange}
+          required
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300 outline-none"
+        />
+      </div>
+
+      <div>
+        <input
+          type="date"
+          name="date"
+          value={formData.date}
+          onChange={handleChange}
+          required
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300 outline-none"
+        />
+      </div>
+
+      <div>
+        <input
+          type="text"
+          name="location"
+          placeholder="Location"
+          value={formData.location}
+          onChange={handleChange}
+          required
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300 outline-none"
+        />
+      </div>
+
+      <div>
+        <input
+          type="number"
+          name="maxAttendees"
+          placeholder="Max Attendees"
+          value={formData.maxAttendees}
+          onChange={handleChange}
+          required
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300 outline-none"
+        />
+      </div>
+
+      {/* File Input for Event Image */}
+      <div>
+        <input
+          type="file"
+          onChange={handleFileChange}
+          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        />
+      </div>
+
+      <div>
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition duration-300"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
         >
-          <a href="/my-events">Create Event</a>
+          Create Event
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
   );
 };
 

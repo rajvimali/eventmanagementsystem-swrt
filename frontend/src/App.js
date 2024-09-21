@@ -1,29 +1,27 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Register from "./components/Register";
-import Login from "./components/Login";
-import EventList from "./components/EventList";
-import CreateEvent from "./components/CreateEvent";
-import EventDetail from "./components/EventDetail";
-import Logout from "./components/Logout";
-import MyEvents from "./components/MyEvents";
-import EditEvent from "./components/EditEvent";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import MyEvents from './pages/MyEvents'; // Import the new page
+import CreateEventPage from './pages/CreateEventPage';
+import Login from './components/Login';
+import Register from './components/Register';
+import EventDetail from './components/EventDetail';
 
-function App() {
+const App = () => {
   return (
     <Router>
+      <Navbar />
       <Routes>
-        <Route path="/" element={<EventList />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/create" element={<CreateEvent />} />
-        <Route path="/my-events" element={<MyEvents />} />
-        <Route path="/logout" element={<Logout />} />
-        <Route path="/edit-event/:id" element={<EditEvent />} />
-        <Route path="/event/:id" element={<EventDetail />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/create-event" element={<CreateEventPage />} />
+        <Route path="/my-events" element={<MyEvents />} /> {/* New route for My Events */}
+        <Route path="/events/:id" element={<EventDetail />} />
       </Routes>
     </Router>
   );
-}
+};
 
 export default App;

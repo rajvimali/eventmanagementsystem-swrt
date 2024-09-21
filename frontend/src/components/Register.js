@@ -1,98 +1,92 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState } from 'react';
+import API from '../api';
+import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
-        name,
-        email,
-        password,
-      });
-      console.log("User registered:", res.data);
+      const response = await API.post('/auth/register', formData);
+      if (response.status === 200) {
+        localStorage.setItem('name', response.data.name); // Store the user's name
+        navigate('/login');
+      } else {
+        console.error('Failed to register user');
+      }
     } catch (error) {
-      console.error("Error during registration:", error.response.data);
+      console.error('Registration error:', error);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">
-      <h2 className="text-4xl font-bold text-center text-indigo-600 mb-6">
-        Register
-      </h2>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-md rounded-lg p-8 max-w-md w-full space-y-6"
+      >
+        <h2 className="text-3xl font-bold text-center text-gray-800">Register</h2>
 
-      {/* Navigation Links */}
-      <div className="mb-6 text-center">
-        <ul className="inline-flex space-x-6 text-indigo-600">
-          <li>
-            <a href="/" className="hover:underline">
-              Home
-            </a>
-          </li>
-          <li>
-            <a href="/register" className="hover:underline">
-              Register
-            </a>
-          </li>
-          {/* <li>
-            <a href="/login" className="hover:underline">
-              Login
-            </a>
-          </li> */}
-        </ul>
-      </div>
-
-      {/* Registration Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-gray-700 font-medium mb-2">Name</label>
           <input
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter your name"
+            name="name"
+            placeholder="Name"
+            value={formData.name}
+            onChange={handleChange}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300 outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-gray-700 font-medium mb-2">Email</label>
           <input
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300 outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-gray-700 font-medium mb-2">
-            Password
-          </label>
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring focus:ring-blue-300 outline-none"
           />
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition duration-300"
-        >
-          <a href="/create"> Register</a>
-        </button>
+        <div>
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            Register
+          </button>
+        </div>
+
+        <p className="text-center text-gray-500">
+          Already have an account?{' '}
+          <a href="/login" className="text-blue-600 hover:underline">
+            Login
+          </a>
+        </p>
       </form>
     </div>
   );

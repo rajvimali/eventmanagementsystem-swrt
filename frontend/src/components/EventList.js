@@ -1,99 +1,126 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import API from '../api';
+import { Link } from 'react-router-dom';
 
-function EventList() {
+const EventList = () => {
   const [events, setEvents] = useState([]);
   const [filters, setFilters] = useState({
-    date: "",
-    location: "",
-    eventType: "",
+    date: '',
+    location: '',
+    eventType: ''
   });
 
   useEffect(() => {
     const fetchEvents = async () => {
-      const res = await axios.get("/api/events");
-      setEvents(res.data);
+      try {
+        const query = new URLSearchParams(filters).toString(); // Convert filters to query string
+        const res = await API.get(`/events?${query}`); // Send query parameters to the backend
+        if (res.status === 200) {
+          setEvents(res.data);
+        } else {
+          console.error('Failed to fetch events');
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
     };
     fetchEvents();
-  }, []);
+  }, [filters]);
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters({ ...filters, [name]: value });
+  // Handle input change for filters
+  const handleInputChange = (e) => {
+    setFilters({
+      ...filters,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  // Handle form submission to apply filters
+  const handleFilterSubmit = (e) => {
+    e.preventDefault();
+    // The useEffect hook will automatically trigger when filters change
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      <h2 className="text-4xl font-bold text-center mb-10 text-indigo-600">
-        Upcoming Events
-      </h2>
+    <div className="container mx-auto mt-8">
+      <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
 
-      {/* Navigation Links */}
-      <div className="mb-8 flex justify-center space-x-6 text-indigo-600">
-        <a href="/" className="hover:underline">
-          Home
-        </a>
-        {/* <a href="/register" className="hover:underline">
-          Register
-        </a> */}
-        <a href="/login" className="hover:underline">
-          Login
-        </a>
-      </div>
-
-      {/* Filter Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-        <div className="flex space-x-4 mb-4 md:mb-0">
-          <input
-            type="date"
-            name="date"
-            value={filters.date}
-            onChange={handleFilterChange}
-            placeholder="Filter by date"
-            className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-          />
-          <input
-            type="text"
-            name="location"
-            value={filters.location}
-            onChange={handleFilterChange}
-            placeholder="Filter by location"
-            className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-          />
-          <select
-            name="eventType"
-            value={filters.eventType}
-            onChange={handleFilterChange}
-            className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="">All Event Types</option>
-            <option value="conference">Conference</option>
-            <option value="workshop">Workshop</option>
-            <option value="webinar">Webinar</option>
-          </select>
+      {/* Filter Form */}
+      <form onSubmit={handleFilterSubmit} className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-gray-700">Date:</label>
+            <input
+              type="date"
+              name="date"
+              value={filters.date}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700">Location:</label>
+            <input
+              type="text"
+              name="location"
+              value={filters.location}
+              onChange={handleInputChange}
+              placeholder="Enter location"
+              className="w-full p-2 border border-gray-300 rounded"
+            />
+          </div>
+          <div>
+            <label className="block text-gray-700">Event Type:</label>
+            <input
+              type="text"
+              name="eventType"
+              value={filters.eventType}
+              onChange={handleInputChange}
+              placeholder="Enter event type"
+              className="w-full p-2 border border-gray-300 rounded"
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Event List */}
-      <ul className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {events.map((event) => (
-          <li
-            key={event._id}
-            className="bg-white shadow-md rounded-lg p-6 transition duration-300 hover:shadow-lg"
-          >
-            <h3 className="text-2xl font-semibold text-indigo-600 mb-2">
-              {event.title}
-            </h3>
-            <p className="text-gray-500">
-              {new Date(event.date).toLocaleDateString()}
-            </p>
-            <p className="text-gray-700">{event.location}</p>
-            <p className="text-gray-600">{event.eventType}</p>
-          </li>
-        ))}
-      </ul>
+        <button
+          type="submit"
+          className="mt-4 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+        >
+          Apply Filters
+        </button>
+      </form>
+
+      {/* Events List */}
+      {events.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {events.map((event) => (
+            <div key={event._id} className="bg-white p-6 shadow-md rounded-md">
+              {event.image && (
+                <img
+                  src={`http://localhost:5000/${event.image}`}
+                  alt={event.title}
+                  className="w-full h-48 object-cover mb-4 rounded-md"
+                />
+              )}
+              <h3 className="text-xl font-bold mb-2">{event.title}</h3>
+              <p className="text-gray-700 mb-2">{event.description}</p>
+              <p className="text-gray-600">Date: {new Date(event.date).toLocaleDateString()}</p>
+              <p className="text-gray-600">Location: {event.location}</p>
+              <p className="text-gray-600">Event Type: {event.eventType}</p>
+              <Link
+                to={`/events/${event._id}`}
+                className="inline-block mt-4 text-blue-600 hover:text-blue-700"
+              >
+                View Details
+              </Link>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p>No events found</p>
+      )}
     </div>
   );
-}
+};
 
 export default EventList;
